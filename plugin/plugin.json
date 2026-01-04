@@ -1,0 +1,106 @@
+{
+  "name": "claude-provider",
+  "version": "1.0.0",
+  "description": "Claude Provider - 支持 OAuth、Claude Code、Console、Bedrock、CCR 多种认证方式",
+  "author": "ProxyCast Team",
+  "homepage": "https://github.com/aiclientproxy/claude-provider",
+  "license": "MIT",
+
+  "plugin_type": "oauth_provider",
+  "entry": "claude-provider-cli",
+  "min_proxycast_version": "1.0.0",
+
+  "provider": {
+    "id": "claude",
+    "display_name": "Claude (Anthropic)",
+    "target_protocol": "anthropic",
+    "supported_models": ["claude-*"],
+    "auth_types": ["oauth", "claude_code", "console", "setup_token", "bedrock", "ccr"],
+    "credential_schemas": {
+      "oauth": {
+        "type": "object",
+        "properties": {
+          "access_token": { "type": "string", "title": "Access Token" },
+          "refresh_token": { "type": "string", "title": "Refresh Token" },
+          "email": { "type": "string", "title": "Email" },
+          "expire": { "type": "string", "title": "Expire Time" }
+        },
+        "required": ["access_token", "refresh_token"]
+      },
+      "claude_code": {
+        "type": "object",
+        "properties": {
+          "access_token": { "type": "string", "title": "Access Token" },
+          "refresh_token": { "type": "string", "title": "Refresh Token" },
+          "session_key": { "type": "string", "title": "Session Key" }
+        },
+        "required": ["refresh_token"]
+      },
+      "console": {
+        "type": "object",
+        "properties": {
+          "access_token": { "type": "string", "title": "Access Token" },
+          "refresh_token": { "type": "string", "title": "Refresh Token" },
+          "organization_id": { "type": "string", "title": "Organization ID" }
+        },
+        "required": ["access_token", "refresh_token"]
+      },
+      "setup_token": {
+        "type": "object",
+        "properties": {
+          "access_token": { "type": "string", "title": "Access Token" }
+        },
+        "required": ["access_token"]
+      },
+      "bedrock": {
+        "type": "object",
+        "properties": {
+          "access_key_id": { "type": "string", "title": "Access Key ID" },
+          "secret_access_key": { "type": "string", "title": "Secret Access Key" },
+          "session_token": { "type": "string", "title": "Session Token" },
+          "region": { "type": "string", "default": "us-east-1", "title": "Region" }
+        },
+        "required": ["access_key_id", "secret_access_key", "region"]
+      },
+      "ccr": {
+        "type": "object",
+        "properties": {
+          "api_key": { "type": "string", "title": "API Key" },
+          "base_url": { "type": "string", "title": "Base URL" }
+        },
+        "required": ["api_key", "base_url"]
+      }
+    }
+  },
+
+  "binary": {
+    "binary_name": "claude-provider-cli",
+    "github_owner": "aiclientproxy",
+    "github_repo": "claude-provider",
+    "platform_binaries": {
+      "macos-arm64": "claude-provider-aarch64-apple-darwin",
+      "macos-x64": "claude-provider-x86_64-apple-darwin",
+      "linux-x64": "claude-provider-x86_64-unknown-linux-gnu",
+      "linux-arm64": "claude-provider-aarch64-unknown-linux-gnu",
+      "windows-x64": "claude-provider-x86_64-pc-windows-msvc.exe"
+    },
+    "checksum_file": "checksums.txt"
+  },
+
+  "ui": {
+    "surfaces": ["oauth_providers"],
+    "icon": "MessageSquare",
+    "title": "Claude Provider",
+    "entry": "dist/index.js",
+    "styles": "dist/styles.css",
+    "default_width": 950,
+    "default_height": 750,
+    "permissions": [
+      "database:read",
+      "database:write",
+      "http:request",
+      "crypto:encrypt",
+      "shell:open"
+    ]
+  }
+}

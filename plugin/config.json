@@ -1,0 +1,37 @@
+{
+  "enabled": true,
+  "timeout_ms": 60000,
+  "settings": {
+    "oauth": {
+      "client_id": "9d1c250a-e61b-44d9-88ed-5944d1962f5e",
+      "auth_url": "https://claude.ai/oauth/authorize",
+      "token_url": "https://console.anthropic.com/v1/oauth/token",
+      "redirect_uri": "https://console.anthropic.com/oauth/code/callback",
+      "scopes": "org:create_api_key user:profile user:inference",
+      "scopes_setup": "user:inference"
+    },
+    "api": {
+      "base_url": "https://api.anthropic.com",
+      "version": "2023-06-01"
+    },
+    "bedrock": {
+      "default_region": "us-east-1",
+      "model_prefix": "us.anthropic."
+    },
+    "token_refresh": {
+      "auto_refresh": true,
+      "refresh_threshold_minutes": 5,
+      "max_retry": 3,
+      "retry_delay_ms": 1000
+    },
+    "health_check": {
+      "enabled": true,
+      "interval_seconds": 300,
+      "unhealthy_threshold": 3
+    },
+    "encryption": {
+      "algorithm": "aes-256-cbc",
+      "key_derivation": "pbkdf2"
+    }
+  }
+}
