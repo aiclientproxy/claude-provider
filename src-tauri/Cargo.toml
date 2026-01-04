@@ -1,6 +1,6 @@
 [package]
 name = "claude-provider"
-version = "1.0.0"
+version = "0.2.0"
 edition = "2021"
 authors = ["ProxyCast Team"]
 description = "Claude Provider Plugin for ProxyCast - 支持 OAuth、Claude Code、Console、Bedrock、CCR 多种认证方式"

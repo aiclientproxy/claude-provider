@@ -1,6 +1,6 @@
 {
   "name": "claude-provider",
-  "version": "1.0.0",
+  "version": "0.2.0",
   "description": "Claude Provider - 支持 OAuth、Claude Code、Console、Bedrock、CCR 多种认证方式",
   "author": "ProxyCast Team",
   "homepage": "https://github.com/aiclientproxy/claude-provider",
