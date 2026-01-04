@@ -1,41 +1,49 @@
-name: Release
+name: Release Binary
 
 on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., v1.0.0)'
+        required: true
+        default: 'v1.0.0'
 
-env:
-  CARGO_TERM_COLOR: always
+permissions:
+  contents: write
 
 jobs:
   build:
     strategy:
+      fail-fast: false
       matrix:
         include:
-          - os: macos-latest
+          - platform: macos-latest
             target: aarch64-apple-darwin
             binary_name: claude-provider-aarch64-apple-darwin
-          - os: macos-latest
+          - platform: macos-latest
             target: x86_64-apple-darwin
             binary_name: claude-provider-x86_64-apple-darwin
-          - os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-            binary_name: claude-provider-x86_64-unknown-linux-gnu
-          - os: ubuntu-latest
-            target: aarch64-unknown-linux-gnu
-            binary_name: claude-provider-aarch64-unknown-linux-gnu
-          - os: windows-latest
+          - platform: windows-latest
             target: x86_64-pc-windows-msvc
             binary_name: claude-provider-x86_64-pc-windows-msvc.exe
+          - platform: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            binary_name: claude-provider-x86_64-unknown-linux-gnu
+          - platform: ubuntu-22.04
+            target: aarch64-unknown-linux-gnu
+            binary_name: claude-provider-aarch64-unknown-linux-gnu
 
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.platform }}
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Install Rust
-        uses: dtolnay/rust-action@stable
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
 
@@ -43,34 +51,58 @@ jobs:
         if: matrix.target == 'aarch64-unknown-linux-gnu'
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc-aarch64-linux-gnu
+          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
 
-      - name: Build
-        working-directory: src-tauri
-        run: cargo build --release --target ${{ matrix.target }}
+      - name: Setup Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+          shared-key: "rust-cache-${{ matrix.target }}"
+          cache-on-failure: true
+
+      - name: Build binary
+        run: |
+          cd src-tauri
+          cargo build --release --target ${{ matrix.target }} --bin claude-provider-cli
+        env:
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
 
       - name: Rename binary (Unix)
         if: runner.os != 'Windows'
         run: |
-          mv src-tauri/target/${{ matrix.target }}/release/claude-provider-cli ${{ matrix.binary_name }}
+          cp src-tauri/target/${{ matrix.target }}/release/claude-provider-cli ${{ matrix.binary_name }}
+          chmod +x ${{ matrix.binary_name }}
 
       - name: Rename binary (Windows)
         if: runner.os == 'Windows'
         run: |
-          mv src-tauri/target/${{ matrix.target }}/release/claude-provider-cli.exe ${{ matrix.binary_name }}
+          copy src-tauri\target\${{ matrix.target }}\release\claude-provider-cli.exe ${{ matrix.binary_name }}
+
+      - name: Generate checksum (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          shasum -a 256 ${{ matrix.binary_name }} | cut -d ' ' -f 1 > ${{ matrix.binary_name }}.sha256
+
+      - name: Generate checksum (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          $hash = (Get-FileHash -Algorithm SHA256 ${{ matrix.binary_name }}).Hash.ToLower()
+          $hash | Out-File -Encoding ASCII ${{ matrix.binary_name }}.sha256
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.binary_name }}
-          path: ${{ matrix.binary_name }}
+          path: |
+            ${{ matrix.binary_name }}
+            ${{ matrix.binary_name }}.sha256
 
   release:
     needs: build
     runs-on: ubuntu-latest
-
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
@@ -80,20 +112,65 @@ jobs:
       - name: Prepare release files
         run: |
           mkdir -p release
-          find artifacts -type f -exec mv {} release/ \;
+          find artifacts -type f -exec cp {} release/ \;
           cd release
-          sha256sum * > checksums.txt
+          # 合并所有 checksum 到一个文件
+          cat *.sha256 > checksums.txt.tmp
+          # 添加文件名到 checksum
+          for f in claude-provider-*; do
+            if [[ ! "$f" == *.sha256 ]]; then
+              hash=$(cat "$f.sha256")
+              echo "$hash  $f" >> checksums.txt
+            fi
+          done
+          rm -f *.sha256 checksums.txt.tmp
+          ls -la
 
-      - name: Build frontend
+      - name: Package plugin
         run: |
-          npm install
-          npm run build
-          cp -r plugin/dist release/
+          # 创建插件包目录
+          mkdir -p plugin-package
+
+          # 复制插件配置文件
+          cp plugin/plugin.json plugin-package/
+          cp plugin/config.json plugin-package/
+
+          # 打包为 zip
+          cd plugin-package
+          zip -j ../release/claude-provider-plugin.zip plugin.json config.json
+          cd ..
+
+          # 显示打包结果
+          ls -la release/
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
+          tag_name: ${{ github.event.inputs.version || github.ref_name }}
+          name: Claude Provider ${{ github.event.inputs.version || github.ref_name }}
+          body: |
+            ## Claude Provider Release
+
+            Claude OAuth Provider Plugin for ProxyCast
+
+            ### Features
+            - OAuth 2.0 + PKCE authentication with Claude.ai
+            - Support for multiple auth types (OAuth, Claude Code, Console, Setup Token, Bedrock, CCR)
+            - Token auto-refresh
+            - Credential encryption (AES-256-CBC)
+
+            ### Downloads
+            - **Plugin Package**: `claude-provider-plugin.zip` (Install in ProxyCast)
+            - **macOS (Apple Silicon)**: `claude-provider-aarch64-apple-darwin`
+            - **macOS (Intel)**: `claude-provider-x86_64-apple-darwin`
+            - **Windows (64-bit)**: `claude-provider-x86_64-pc-windows-msvc.exe`
+            - **Linux (x64)**: `claude-provider-x86_64-unknown-linux-gnu`
+            - **Linux (ARM64)**: `claude-provider-aarch64-unknown-linux-gnu`
+
+            ### Installation
+            Install via ProxyCast Plugin Center or download the plugin package.
+          draft: false
+          prerelease: false
           files: release/*
-          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
