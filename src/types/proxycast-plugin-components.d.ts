@@ -95,6 +95,20 @@ declare module "@proxycast/plugin-components" {
   }
   export const AntigravityFormStandalone: FC<AntigravityFormStandaloneProps>;
 
+  export interface GeminiFormStandaloneProps {
+    onSuccess?: () => void;
+    onCancel?: () => void;
+  }
+  export const GeminiFormStandalone: FC<GeminiFormStandaloneProps>;
+
+  export interface ClaudeFormStandaloneProps {
+    onSuccess?: () => void;
+    onCancel?: () => void;
+    initialName?: string;
+    authType?: string;
+  }
+  export const ClaudeFormStandalone: FC<ClaudeFormStandaloneProps>;
+
   export type BrowserMode = "system" | "builtin" | "playwright";
   export interface BrowserModeSelectorProps {
     value: BrowserMode;
@@ -314,6 +328,9 @@ declare module "@proxycast/plugin-components" {
   export const Puzzle: FC<IconProps>;
   export const Blocks: FC<IconProps>;
   export const Sparkles: FC<IconProps>;
+  export const Cookie: FC<IconProps>;
+  export const FileJson: FC<IconProps>;
+  export const KeyRound: FC<IconProps>;
   export const Wand2: FC<IconProps>;
   export const Bot: FC<IconProps>;
   export const Brain: FC<IconProps>;
