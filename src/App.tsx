@@ -383,17 +383,17 @@ export function ClaudeProviderApp(_props: ClaudeProviderAppProps) {
       )}
 
       {/* 添加凭证模态框 */}
-      <Modal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} maxWidth="max-w-2xl">
+      <Modal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} maxWidth="max-w-lg">
         <div className="p-6">
           <h3 className="text-lg font-semibold mb-4">添加 Claude 凭证</h3>
 
           {/* 认证方式选择 */}
           <Tabs value={selectedAuthMethod} onValueChange={(v) => setSelectedAuthMethod(v as AuthMethod)}>
-            <TabsList className="grid grid-cols-6 mb-4">
+            <TabsList className="grid grid-cols-3 gap-1 mb-4 h-auto">
               {AUTH_METHODS.map((method) => (
-                <TabsTrigger key={method.id} value={method.id} className="flex items-center gap-1">
-                  <method.icon className="h-4 w-4" />
-                  <span className="hidden sm:inline">{method.label}</span>
+                <TabsTrigger key={method.id} value={method.id} className="flex items-center gap-1 text-xs py-2">
+                  <method.icon className="h-3 w-3" />
+                  {method.label}
                 </TabsTrigger>
               ))}
             </TabsList>
